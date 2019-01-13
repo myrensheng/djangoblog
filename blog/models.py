@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.shortcuts import redirect
 from django.urls import reverse
+import markdown
+from django.utils.html import strip_tags
 
 
 class Category(models.Model):
@@ -36,6 +38,23 @@ class Post(models.Model):
     # 标签与文章的关系是多对多的关系
     tags = models.ManyToManyField(Tag, blank=True)
     author = models.ForeignKey(User)
+    views = models.PositiveIntegerField(default=0)
+
+    def save(self,*args,**kwargs):
+        #  重写save方法，当自动生成文章的摘要显示在index网页中
+        if not self.excerpt:
+            md = markdown.Markdown(extensions=[
+                    'markdown.extensions.extra',
+                    'markdown.extensions.codehilite',
+                ])
+            self.excerpt = strip_tags(md.convert(self.body))[:54]
+        #  调用父类的save方法，将数据存储到数据库
+        super(Post, self).save(*args,**kwargs)
+
+    def increase_views(self):
+        # 文章浏览一次，数据库中的views字段就加一
+        self.views += 1
+        self.save(update_fields=['views'])
 
     def __str__(self):
         return self.title

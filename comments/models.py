@@ -11,4 +11,4 @@ class Comment(models.Model):
     post = models.ForeignKey('blog.Post')
 
     def __str__(self):
-        return self.text[:20]
+        return self.text
